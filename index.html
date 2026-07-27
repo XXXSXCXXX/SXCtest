@@ -1,562 +1,348 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>魔法构筑原型</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #fff;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-
-        h1 {
-            margin-bottom: 20px;
-            color: #e94560;
-            text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
-        }
-
-        .container {
-            width: 100%;
-            max-width: 800px;
-        }
-
-        .crafting-area {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 2px solid rgba(233, 69, 96, 0.3);
-        }
-
-        .wand-slots {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .slot {
-            width: 70px;
-            height: 70px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 2px dashed rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .slot:hover {
-            border-color: #e94560;
-            background: rgba(233, 69, 96, 0.1);
-        }
-
-        .slot.filled {
-            border-style: solid;
-            border-color: #e94560;
-            background: rgba(233, 69, 96, 0.2);
-        }
-
-        .slot .remove-btn {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            width: 20px;
-            height: 20px;
-            background: #ff4757;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .slot:hover .remove-btn {
-            opacity: 1;
-        }
-
-        .spell-library {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .spell {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid transparent;
-        }
-
-        .spell:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.5);
-            border-color: #fff;
-        }
-
-        .spell .icon {
-            font-size: 28px;
-            margin-bottom: 5px;
-        }
-
-        .spell .name {
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .spell.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .spell.disabled:hover {
-            transform: none;
-            box-shadow: none;
-        }
-
-        .btn {
-            padding: 12px 30px;
-            border: none;
-            border-radius: 25px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin: 10px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.5);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .game-area {
-            display: none;
-            width: 100%;
-            max-width: 800px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 15px;
-            overflow: hidden;
-            border: 2px solid rgba(233, 69, 96, 0.3);
-        }
-
-        #gameCanvas {
-            width: 100%;
-            height: 500px;
-            display: block;
-            cursor: crosshair;
-        }
-
-        .game-info {
-            display: flex;
-            justify-content: space-between;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.3);
-        }
-
-        .info-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .info-label {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .info-value {
-            font-weight: bold;
-            color: #e94560;
-        }
-
-        .message {
-            text-align: center;
-            padding: 20px;
-            font-size: 18px;
-            color: #ffd700;
-        }
-
-        .instructions {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-left: 4px solid #e94560;
-        }
-
-        .instructions h3 {
-            margin-bottom: 10px;
-            color: #e94560;
-        }
-
-        .instructions ul {
-            margin-left: 20px;
-        }
-
-        .instructions li {
-            margin-bottom: 5px;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .combo-preview {
-            margin-top: 15px;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            text-align: center;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .combo-preview span {
-            color: #ffd700;
-            font-weight: bold;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>魔法构筑 - 闯关小游戏</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#1a1a2e; color:#fff; font-family:'Segoe UI',sans-serif; display:flex; flex-direction:column; align-items:center; min-height:100vh; }
+h1 { margin:20px 0; color:#e94560; text-shadow:0 0 10px rgba(233,69,96,.5); font-size:28px; }
+.container { width:100%; max-width:820px; padding:0 10px; }
+.crafting { background:rgba(255,255,255,.05); border-radius:15px; padding:20px; margin-bottom:20px; border:2px solid rgba(233,69,96,.3); }
+.slots { display:flex; justify-content:center; gap:10px; margin-bottom:15px; }
+.slot { width:72px; height:72px; background:rgba(0,0,0,.3); border:2px dashed rgba(255,255,255,.3); border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.3s; position:relative; flex-direction:column; }
+.slot:hover { border-color:#e94560; }
+.slot.filled { border:2px solid #e94560; background:rgba(233,69,96,.15); }
+.slot .x { position:absolute; top:-6px; right:-6px; width:18px; height:18px; background:#ff4757; border-radius:50%; font-size:11px; display:none; align-items:center; justify-content:center; cursor:pointer; line-height:18px; }
+.slot:hover .x { display:flex; }
+.spells { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-bottom:15px; }
+.spell { width:76px; height:76px; background:linear-gradient(135deg,#667eea,#764ba2); border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:.3s; border:2px solid transparent; }
+.spell:hover { transform:translateY(-4px); box-shadow:0 4px 12px rgba(102,126,234,.5); border-color:#fff; }
+.spell .ic { font-size:26px; }
+.spell .nm { font-size:11px; margin-top:4px; }
+.spell.off { opacity:.4; pointer-events:none; }
+.combo { text-align:center; padding:8px; background:rgba(0,0,0,.3); border-radius:8px; margin-bottom:15px; font-size:14px; color:rgba(255,255,255,.7); }
+.combo b { color:#ffd700; }
+.btns { text-align:center; }
+.btn { padding:10px 28px; border:none; border-radius:25px; font-size:15px; font-weight:bold; cursor:pointer; transition:.3s; margin:5px; }
+.btn-go { background:linear-gradient(135deg,#e94560,#ff6b6b); color:#fff; }
+.btn-go:hover { transform:scale(1.05); }
+.btn-go:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+.btn-back { background:rgba(255,255,255,.1); color:#fff; border:2px solid rgba(255,255,255,.3); }
+.btn-back:hover { background:rgba(255,255,255,.2); }
+.game-wrap { display:none; }
+canvas { display:block; background:#0f0f23; border-radius:12px; border:2px solid rgba(233,69,96,.3); cursor:crosshair; width:100%; }
+.hud { display:flex; justify-content:space-between; padding:12px 16px; background:rgba(0,0,0,.4); border-radius:0 0 12px 12px; margin-top:-4px; }
+.hud span { font-size:14px; }
+.hud b { color:#e94560; }
+.msg { text-align:center; padding:16px; font-size:20px; color:#ffd700; min-height:52px; }
+.help { background:rgba(255,255,255,.05); border-radius:10px; padding:14px; margin-bottom:18px; border-left:4px solid #e94560; font-size:13px; line-height:1.8; color:rgba(255,255,255,.8); }
+.help h3 { color:#e94560; margin-bottom:6px; }
+</style>
 </head>
 <body>
-    <h1>🧙‍♂️ 魔法构筑原型</h1>
-    
-    <div class="container">
-        <div class="instructions">
-            <h3>📖 玩法说明</h3>
-            <ul>
-                <li>点击法术图标，将它们按顺序放入上方的法杖槽位中</li>
-                <li>法术会从左到右依次生效，组合出不同的效果</li>
-                <li>点击"开始闯关"进入战斗，点击屏幕释放魔法</li>
-                <li>消灭所有红色史莱姆即可过关！</li>
-            </ul>
-        </div>
-
-        <div class="crafting-area" id="craftingArea">
-            <div class="wand-slots" id="wandSlots">
-                <!-- 槽位将由JS生成 -->
-            </div>
-            
-            <div class="combo-preview" id="comboPreview">
-                当前组合：<span>未组合任何法术</span>
-            </div>
-
-            <div class="spell-library" id="spellLibrary">
-                <div class="spell" data-spell="projectile">
-                    <div class="icon">🔮</div>
-                    <div class="name">飞弹</div>
-                </div>
-                <div class="spell" data-spell="split">
-                    <div class="icon">✂️</div>
-                    <div class="name">分裂</div>
-                </div>
-                <div class="spell" data-spell="homing">
-                    <div class="icon">🎯</div>
-                    <div class="name">追踪</div>
-                </div>
-                <div class="spell" data-spell="explosion">
-                    <div class="icon">💥</div>
-                    <div class="name">爆炸</div>
-                </div>
-            </div>
-
-            <div style="text-align: center; margin-top: 20px;">
-                <button class="btn btn-primary" id="startBtn" disabled>开始闯关</button>
-                <button class="btn btn-secondary" id="clearBtn">清空法术</button>
-            </div>
-        </div>
-
-        <div class="game-area" id="gameArea">
-            <canvas id="gameCanvas"></canvas>
-            <div class="game-info">
-                <div class="info-item">
-                    <span class="info-label">敌人剩余：</span>
-                    <span class="info-value" id="enemyCount">0</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">法术组合：</span>
-                    <span class="info-value" id="currentCombo">无</span>
-                </div>
-            </div>
-            <div class="message" id="gameMessage"></div>
-            <div style="text-align: center; padding: 15px;">
-                <button class="btn btn-secondary" id="backBtn">返回构筑</button>
-            </div>
-        </div>
+<h1>🧙‍♂️ 魔法构筑 - 闯关小游戏</h1>
+<div class="container">
+  <div class="help">
+    <h3>📖 玩法</h3>
+    ① 点击下方法术图标，按顺序放入法杖槽位<br>
+    ② 法术从左到右依次生效，组合出不同效果<br>
+    ③ 点击"开始闯关"，在战斗中<b>点击画面</b>释放魔法<br>
+    ④ 消灭所有史莱姆即可过关！共5关，难度递增
+  </div>
+  <div class="crafting" id="craftUI">
+    <div class="slots" id="slots"></div>
+    <div class="combo" id="combo">当前组合：<b>未选择法术</b></div>
+    <div class="spells" id="lib">
+      <div class="spell" data-s="proj"><div class="ic">🔮</div><div class="nm">飞弹</div></div>
+      <div class="spell" data-s="split"><div class="ic">✂️</div><div class="nm">分裂</div></div>
+      <div class="spell" data-s="homing"><div class="ic">🎯</div><div class="nm">追踪</div></div>
+      <div class="spell" data-s="explode"><div class="ic">💥</div><div class="nm">爆炸</div></div>
+      <div class="spell" data-s="laser"><div class="ic">⚡</div><div class="nm">激光</div></div>
+      <div class="spell" data-s="freeze"><div class="ic">❄️</div><div class="nm">冰冻</div></div>
     </div>
+    <div class="btns">
+      <button class="btn btn-go" id="goBtn" disabled>开始闯关</button>
+      <button class="btn btn-back" id="clrBtn">清空法术</button>
+    </div>
+  </div>
+  <div class="game-wrap" id="gameUI">
+    <canvas id="cv" width="800" height="500"></canvas>
+    <div class="hud">
+      <span>关卡：<b id="lvlTxt">1</b></span>
+      <span>敌人：<b id="eneTxt">0</b></span>
+      <span>生命：<b id="hpTxt">5</b></span>
+      <span>组合：<b id="cmbTxt">-</b></span>
+    </div>
+    <div class="msg" id="msg"></div>
+    <div class="btns" style="margin-bottom:20px;">
+      <button class="btn btn-back" id="backBtn">返回构筑</button>
+      <button class="btn btn-go" id="nextBtn" style="display:none;">下一关</button>
+    </div>
+  </div>
+</div>
+<script>
+const SLOTS=4;
+const SPELLS={proj:{n:'飞弹',ic:'🔮',t:'base'},split:{n:'分裂',ic:'✂️',t:'mod'},homing:{n:'追踪',ic:'🎯',t:'mod'},explode:{n:'爆炸',ic:'💥',t:'mod'},laser:{n:'激光',ic:'⚡',t:'base'},freeze:{n:'冰冻',ic:'❄️',t:'mod'}};
+let wand=Array(SLOTS).fill(null);
+let level=1, hp=5, enemies=[], bullets=[], particles=[], lasers=[];
+let running=false, animId=null, cooldown=0;
+const cv=document.getElementById('cv'), cx=cv.getContext('2d');
 
-    <script>
-        // 游戏状态
-        const gameState = {
-            wandSlots: [null, null, null], // 3个法术槽位
-            isPlaying: false,
-            enemies: [],
-            projectiles: [],
-            particles: [],
-            player: { x: 400, y: 450 },
-            gameLoop: null,
-            comboDescription: ''
-        };
+// === 构筑界面 ===
+function renderSlots(){
+  const el=document.getElementById('slots'); el.innerHTML='';
+  wand.forEach((s,i)=>{
+    const d=document.createElement('div');
+    d.className='slot'+(s?' filled':'');
+    d.innerHTML=s?`<div style="font-size:22px">${SPELLS[s].ic}</div><div style="font-size:10px">${SPELLS[s].n}</div><div class="x">×</div>`:'<div style="color:rgba(255,255,255,.3);font-size:12px">空</div>';
+    d.onclick=()=>{if(s){wand[i]=null;refresh();}};
+    el.appendChild(d);
+  });
+}
+function refresh(){
+  renderSlots();
+  document.querySelectorAll('.spell').forEach(e=>{
+    e.classList.toggle('off',wand.includes(e.dataset.s));
+  });
+  const filled=wand.filter(s=>s);
+  document.getElementById('combo').innerHTML=filled.length?`当前组合：<b>${filled.map(s=>SPELLS[s].n).join(' → ')}</b>`:'当前组合：<b>未选择法术</b>';
+  document.getElementById('goBtn').disabled=!wand.some(s=>s&&SPELLS[s].t==='base');
+}
+document.getElementById('lib').onclick=e=>{
+  const sp=e.target.closest('.spell'); if(!sp||sp.classList.contains('off'))return;
+  const idx=wand.indexOf(null); if(idx<0)return;
+  wand[idx]=sp.dataset.s; refresh();
+};
+document.getElementById('clrBtn').onclick=()=>{wand=Array(SLOTS).fill(null);refresh();};
 
-        // 法术定义
-        const spells = {
-            projectile: {
-                name: '飞弹',
-                icon: '🔮',
-                description: '发射一枚基础魔法弹',
-                type: 'base'
-            },
-            split: {
-                name: '分裂',
-                icon: '✂️',
-                description: '让下一个法术分裂成3枚',
-                type: 'modifier'
-            },
-            homing: {
-                name: '追踪',
-                icon: '🎯',
-                description: '让下一个法术获得追踪效果',
-                type: 'modifier'
-            },
-            explosion: {
-                name: '爆炸',
-                icon: '💥',
-                description: '让下一个法术产生范围爆炸',
-                type: 'modifier'
-            }
-        };
+// === 游戏逻辑 ===
+function parseCombo(){
+  let base=null,split=false,homing=false,explode=false,freeze=false,laser=false;
+  let mods=[];
+  wand.forEach(s=>{if(!s)return; if(SPELLS[s].t==='base')base=s; else mods.push(s);});
+  mods.forEach(m=>{if(m==='split')split=true;if(m==='homing')homing=true;if(m==='explode')explode=true;if(m==='freeze')freeze=true;if(m==='laser')laser=true;});
+  return{base,split,homing,explode,freeze,laser};
+}
 
-        // DOM元素
-        const wandSlotsEl = document.getElementById('wandSlots');
-        const spellLibraryEl = document.getElementById('spellLibrary');
-        const startBtn = document.getElementById('startBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const craftingArea = document.getElementById('craftingArea');
-        const gameArea = document.getElementById('gameArea');
-        const gameCanvas = document.getElementById('gameCanvas');
-        const ctx = gameCanvas.getContext('2d');
-        const enemyCountEl = document.getElementById('enemyCount');
-        const currentComboEl = document.getElementById('currentCombo');
-        const gameMessageEl = document.getElementById('gameMessage');
-        const backBtn = document.getElementById('backBtn');
-        const comboPreviewEl = document.getElementById('comboPreview');
+function spawnEnemies(lv){
+  enemies=[];
+  const count=3+lv*2;
+  for(let i=0;i<count;i++){
+    enemies.push({
+      x:80+Math.random()*640, y:40+Math.random()*200,
+      r:18+Math.random()*8, hp:1+Math.floor(lv/2), maxHp:1+Math.floor(lv/2),
+      speed:0.3+lv*0.15+Math.random()*0.3,
+      color:`hsl(${Math.random()*40},80%,55%)`,
+      frozen:0, dir:Math.random()*Math.PI*2, changeTimer:60+Math.random()*120
+    });
+  }
+}
 
-        // 初始化槽位
-        function initSlots() {
-            wandSlotsEl.innerHTML = '';
-            gameState.wandSlots.forEach((spell, index) => {
-                const slot = document.createElement('div');
-                slot.className = `slot ${spell ? 'filled' : ''}`;
-                slot.dataset.index = index;
-                
-                if (spell) {
-                    slot.innerHTML = `
-                        <div style="text-align: center;">
-                            <div style="font-size: 24px;">${spells[spell].icon}</div>
-                            <div style="font-size: 10px;">${spells[spell].name}</div>
-                        </div>
-                        <div class="remove-btn">×</div>
-                    `;
-                } else {
-                    slot.innerHTML = '<div style="color: rgba(255,255,255,0.3); font-size: 12px;">空</div>';
-                }
-                
-                slot.addEventListener('click', () => {
-                    if (spell) {
-                        // 移除法术
-                        gameState.wandSlots[index] = null;
-                        updateSlots();
-                        updateSpellLibrary();
-                        updateComboPreview();
-                    }
-                });
-                
-                wandSlotsEl.appendChild(slot);
-            });
-        }
+function startLevel(lv){
+  level=lv; hp=5; bullets=[]; particles=[]; lasers=[]; cooldown=0;
+  spawnEnemies(lv);
+  document.getElementById('lvlTxt').textContent=lv;
+  document.getElementById('msg').textContent='';
+  document.getElementById('nextBtn').style.display='none';
+  updateHUD(); running=true;
+  if(animId)cancelAnimationFrame(animId);
+  loop();
+}
 
-        // 更新槽位显示
-        function updateSlots() {
-            const slots = wandSlotsEl.querySelectorAll('.slot');
-            slots.forEach((slot, index) => {
-                const spell = gameState.wandSlots[index];
-                slot.className = `slot ${spell ? 'filled' : ''}`;
-                
-                if (spell) {
-                    slot.innerHTML = `
-                        <div style="text-align: center;">
-                            <div style="font-size: 24px;">${spells[spell].icon}</div>
-                            <div style="font-size: 10px;">${spells[spell].name}</div>
-                        </div>
-                        <div class="remove-btn">×</div>
-                    `;
-                } else {
-                    slot.innerHTML = '<div style="color: rgba(255,255,255,0.3); font-size: 12px;">空</div>';
-                }
-            });
-            
-            // 检查是否可以开始游戏
-            const hasBaseSpell = gameState.wandSlots.some(spell => spell && spells[spell].type === 'base');
-            startBtn.disabled = !hasBaseSpell;
-        }
+function updateHUD(){
+  document.getElementById('eneTxt').textContent=enemies.length;
+  document.getElementById('hpTxt').textContent=hp;
+  const c=parseCombo();
+  document.getElementById('cmbTxt').textContent=c.base?wand.filter(s=>s).map(s=>SPELLS[s].n).join('+'):'-';
+}
 
-        // 更新法术库状态
-        function updateSpellLibrary() {
-            const spellElements = spellLibraryEl.querySelectorAll('.spell');
-            spellElements.forEach(el => {
-                const spellType = el.dataset.spell;
-                const isFilled = gameState.wandSlots.includes(spellType);
-                el.classList.toggle('disabled', isFilled);
-            });
-        }
+function shoot(tx,ty){
+  if(cooldown>0||!running)return;
+  const combo=parseCombo(); if(!combo.base)return;
+  cooldown=combo.laser?45:18;
+  const px=400, py=460;
+  const ang=Math.atan2(ty-py,tx-px);
+  if(combo.base==='laser'||combo.laser){
+    // 激光：直线穿透伤害
+    lasers.push({x1:px,y1:py,x2:tx,y2:ty,life:15,color:combo.freeze?'#00e5ff':'#ffea00'});
+    // 对激光路径上的敌人造成伤害
+    enemies.forEach(e=>{
+      if(distToSeg(e.x,e.y,px,py,tx,ty)<e.r+6){
+        hitEnemy(e,1,combo);
+      }
+    });
+    return;
+  }
+  // 飞弹
+  const count=combo.split?3:1;
+  const spread=0.25;
+  for(let i=0;i<count;i++){
+    const a=ang+(i-Math.floor(count/2))*spread;
+    bullets.push({
+      x:px,y:py, vx:Math.cos(a)*7, vy:Math.sin(a)*7,
+      homing:combo.homing, explode:combo.explode, freeze:combo.freeze,
+      r:6, life:120, color:combo.freeze?'#00e5ff':combo.explode?'#ff6b6b':'#a78bfa'
+    });
+  }
+}
 
-        // 更新组合预览
-        function updateComboPreview() {
-            const filledSlots = gameState.wandSlots.filter(s => s !== null);
-            if (filledSlots.length === 0) {
-                comboPreviewEl.innerHTML = '当前组合：<span>未组合任何法术</span>';
-                return;
-            }
-            
-            const comboText = filledSlots.map(s => spells[s].name).join(' + ');
-            comboPreviewEl.innerHTML = `当前组合：<span>${comboText}</span>`;
-        }
+function distToSeg(px,py,x1,y1,x2,y2){
+  const dx=x2-x1,dy=y2-y1,len2=dx*dx+dy*dy;
+  let t=Math.max(0,Math.min(1,((px-x1)*dx+(py-y1)*dy)/len2));
+  const nx=x1+t*dx,ny=y1+t*dy;
+  return Math.hypot(px-nx,py-ny);
+}
 
-        // 法术库点击事件
-        spellLibraryEl.addEventListener('click', (e) => {
-            const spellEl = e.target.closest('.spell');
-            if (!spellEl || spellEl.classList.contains('disabled')) return;
-            
-            const spellType = spellEl.dataset.spell;
-            const emptyIndex = gameState.wandSlots.findIndex(s => s === null);
-            
-            if (emptyIndex !== -1) {
-                gameState.wandSlots[emptyIndex] = spellType;
-                updateSlots();
-                updateSpellLibrary();
-                updateComboPreview();
-            }
-        });
+function hitEnemy(e,dmg,combo){
+  e.hp-=dmg;
+  if(combo&&combo.freeze)e.frozen=120;
+  for(let i=0;i<6;i++)particles.push({x:e.x,y:e.y,vx:(Math.random()-.5)*4,vy:(Math.random()-.5)*4,life:20,color:e.color,r:3});
+}
 
-        // 清空法术
-        clearBtn.addEventListener('click', () => {
-            gameState.wandSlots = [null, null, null];
-            updateSlots();
-            updateSpellLibrary();
-            updateComboPreview();
-        });
+function explodeAt(x,y,combo){
+  const radius=70;
+  for(let i=0;i<20;i++)particles.push({x,y,vx:(Math.random()-.5)*8,vy:(Math.random()-.5)*8,life:30,color:'#ff6b6b',r:4});
+  enemies.forEach(e=>{
+    if(Math.hypot(e.x-x,e.y-y)<radius+e.r){
+      hitEnemy(e,2,combo);
+    }
+  });
+}
 
-        // 生成组合描述
-        function generateComboDescription() {
-            const slots = gameState.wandSlots.filter(s => s !== null);
-            if (slots.length === 0) return '无';
-            
-            let description = '';
-            let hasSplit = false;
-            let hasHoming = false;
-            let hasExplosion = false;
-            let baseSpell = null;
-            
-            slots.forEach(spell => {
-                if (spells[spell].type === 'base') {
-                    baseSpell = spell;
-                } else if (spell === 'split') {
-                    hasSplit = true;
-                } else if (spell === 'homing') {
-                    hasHoming = true;
-                } else if (spell === 'explosion') {
-                    hasExplosion = true;
-                }
-            });
-            
-            if (!baseSpell) return '无效组合';
-            
-            description = spells[baseSpell].name;
-            if (hasSplit) description += ' + 分裂';
-            if (hasHoming) description += ' + 追踪';
-            if (hasExplosion) description += ' + 爆炸';
-            
-            return description;
-        }
+function loop(){
+  if(!running)return;
+  cx.clearRect(0,0,800,500);
+  // 背景星星
+  cx.fillStyle='rgba(255,255,255,.15)';
+  for(let i=0;i<30;i++){cx.fillRect((i*137+cooldown*0.1)%800,(i*97)%500,1.5,1.5);}
+  if(cooldown>0)cooldown--;
 
-        // 开始游戏
-        startBtn.addEventListener('click', () => {
-            gameState.comboDescription = generateComboDescription();
-            currentComboEl.textContent = gameState.comboDescription;
-            
-            craftingArea.style.display = 'none';
-            gameArea.style.display = 'block';
-            
-            // 设置canvas尺寸
-            gameCanvas.width = 800;
-            gameCanvas.height = 500;
-            
-            // 初始化敌人
-            initEnemies();
-            
-            // 开始游戏循环
-            gameState.isPlaying = true;
-            gameState.gameLoop = requestAnimationFrame(gameLoop);
-        });
+  // 更新子弹
+  bullets=bullets.filter(b=>{
+    if(b.homing&&enemies.length){
+      let closest=enemies[0],minD=Infinity;
+      enemies.forEach(e=>{const d=Math.hypot(e.x-b.x,e.y-b.y);if(d<minD){minD=d;closest=e;}});
+      const a=Math.atan2(closest.y-b.y,closest.x-b.x);
+      b.vx+=(Math.cos(a)*7-b.vx)*0.08;
+      b.vy+=(Math.sin(a)*7-b.vy)*0.08;
+    }
+    b.x+=b.vx; b.y+=b.vy; b.life--;
+    // 碰撞
+    for(let i=enemies.length-1;i>=0;i--){
+      const e=enemies[i];
+      if(Math.hypot(e.x-b.x,e.y-b.y)<e.r+b.r){
+        hitEnemy(e,1,b);
+        if(b.explode)explodeAt(b.x,b.y,b);
+        return false;
+      }
+    }
+    if(b.x<-20||b.x>820||b.y<-20||b.y>520||b.life<=0)return false;
+    // 绘制子弹
+    cx.beginPath();cx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    cx.fillStyle=b.color;cx.fill();
+    cx.shadowColor=b.color;cx.shadowBlur=10;cx.fill();cx.shadowBlur=0;
+    return true;
+  });
 
-        // 返回构筑
-        backBtn.addEventListener('click', () => {
-            gameState.isPlaying = false;
-            if (gameState.gameLoop) {
-                cancelAnimationFrame(gameState.gameLoop);
-            }
-            
-            gameArea.style.display = 'none';
-            craftingArea.style.display = 'block';
-            gameMessageEl.textContent = '';
-        });
+  // 绘制激光
+  lasers=lasers.filter(l=>{
+    cx.beginPath();cx.moveTo(l.x1,l.y1);cx.lineTo(l.x2,l.y2);
+    cx.strokeStyle=l.color;cx.lineWidth=l.life>10?6:3;cx.shadowColor=l.color;cx.shadowBlur=20;cx.stroke();cx.shadowBlur=0;
+    l.life--;return l.life>0;
+  });
 
-        // 初始化敌人
-        function initEnemies() {
-            gameState.enemies = [];
-            for (let i = 0; i < 5; i++) {
-                gameState.enemies.push({
+  // 更新敌人
+  enemies.forEach(e=>{
+    if(e.frozen>0){e.frozen--;return;}
+    e.changeTimer--;
+    if(e.changeTimer<=0){e.dir=Math.atan2(460-e.y,400-e.x)+((Math.random()-.5)*1.5);e.changeTimer=60+Math.random()*120;}
+    e.x+=Math.cos(e.dir)*e.speed;
+    e.y+=Math.sin(e.dir)*e.speed*0.5;
+    e.x=Math.max(e.r,Math.min(800-e.r,e.x));
+    e.y=Math.max(e.r,Math.min(400,e.y));
+    // 到达底部扣血
+    if(e.y>440){hp--;e.hp=0;for(let i=0;i<10;i++)particles.push({x:e.x,y:e.y,vx:(Math.random()-.5)*5,vy:(Math.random()-.5)*5,life:25,color:'#ff0000',r:3});}
+  });
+  enemies=enemies.filter(e=>e.hp>0);
+
+  // 绘制敌人
+  enemies.forEach(e=>{
+    cx.beginPath();cx.arc(e.x,e.y,e.r,0,Math.PI*2);
+    cx.fillStyle=e.frozen>0?'#80d8ff':e.color;cx.fill();
+    cx.strokeStyle='rgba(255,255,255,.3)';cx.lineWidth=2;cx.stroke();
+    // 眼睛
+    cx.fillStyle='#fff';cx.beginPath();cx.arc(e.x-5,e.y-3,4,0,Math.PI*2);cx.fill();
+    cx.beginPath();cx.arc(e.x+5,e.y-3,4,0,Math.PI*2);cx.fill();
+    cx.fillStyle='#000';cx.beginPath();cx.arc(e.x-4,e.y-2,2,0,Math.PI*2);cx.fill();
+    cx.beginPath();cx.arc(e.x+6,e.y-2,2,0,Math.PI*2);cx.fill();
+    // 血条
+    if(e.maxHp>1){
+      cx.fillStyle='rgba(0,0,0,.5)';cx.fillRect(e.x-e.r,e.y-e.r-8,e.r*2,5);
+      cx.fillStyle='#4caf50';cx.fillRect(e.x-e.r,e.y-e.r-8,e.r*2*(e.hp/e.maxHp),5);
+    }
+  });
+
+  // 粒子
+  particles=particles.filter(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.life--;
+    cx.globalAlpha=p.life/30;cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);cx.fillStyle=p.color;cx.fill();
+    cx.globalAlpha=1;return p.life>0;
+  });
+
+  // 绘制法师
+  cx.fillStyle='#7c4dff';cx.beginPath();cx.arc(400,460,20,0,Math.PI*2);cx.fill();
+  cx.fillStyle='#ffd700';cx.font='24px serif';cx.textAlign='center';cx.fillText('🧙',400,468);
+  // 法杖
+  cx.strokeStyle='#8d6e63';cx.lineWidth=3;cx.beginPath();cx.moveTo(415,445);cx.lineTo(430,420);cx.stroke();
+  cx.fillStyle='#e040fb';cx.beginPath();cx.arc(430,417,5,0,Math.PI*2);cx.fill();
+  cx.shadowColor='#e040fb';cx.shadowBlur=12;cx.fill();cx.shadowBlur=0;
+
+  updateHUD();
+
+  // 胜负判定
+  if(hp<=0){
+    running=false;
+    document.getElementById('msg').textContent='💀 闯关失败！返回重新构筑吧';
+    document.getElementById('nextBtn').style.display='none';
+    return;
+  }
+  if(enemies.length===0){
+    running=false;
+    if(level>=5){
+      document.getElementById('msg').textContent='🎉 恭喜通关！你是真正的魔法大师！';
+    }else{
+      document.getElementById('msg').textContent=`✨ 第${level}关通过！准备进入第${level+1}关`;
+      document.getElementById('nextBtn').style.display='inline-block';
+    }
+    return;
+  }
+  animId=requestAnimationFrame(loop);
+}
+
+// === 按钮事件 ===
+document.getElementById('goBtn').onclick=()=>{
+  document.getElementById('craftUI').style.display='none';
+  document.getElementById('gameUI').style.display='block';
+  level=1;hp=5;
+  startLevel(1);
+};
+document.getElementById('backBtn').onclick=()=>{
+  running=false;if(animId)cancelAnimationFrame(animId);
+  document.getElementById('gameUI').style.display='none';
+  document.getElementById('craftUI').style.display='block';
+  document.getElementById('msg').textContent='';
+};
+document.getElementById('nextBtn').onclick=()=>{startLevel(level+1);};
+cv.onclick=e=>{
+  if(!running)return;
+  const rect=cv.getBoundingClientRect();
+  const sx=800/rect.width, sy=500/rect.height;
+  shoot((e.clientX-rect.left)*sx,(e.clientY-rect.top)*sy);
+};
+
+refresh();
+</script>
+</body>
+</html>
