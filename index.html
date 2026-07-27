@@ -53,12 +53,12 @@ canvas { display:block; background:#0f0f23; border-radius:12px; border:2px solid
     ② 法术从左到右依次生效，增强效果可重复叠加<br>
     ③ 点击"开始闯关"，在战斗中<b>点击画面</b>释放魔法<br>
     ④ 消灭所有怪物即可过关！共5关，难度递增<br>
-    ⑤ 怪物会发射会发射👊🏻攻击你，注意躲避！
+    ⑤ 怪物会发射👊🏻攻击你，注意躲避！
   </div>
   <div class="crafting" id="craftUI">
     <div class="slots" id="slots"></div>
     <div class="combo" id="combo">当前组合：<b>未选择法术</b></div>
-    <div class="spells" id="lib"></div>
+    <div class="spells" id="spellLibrary"></div>
     <div class="btns">
       <button class="btn btn-go" id="goBtn" disabled>开始闯关</button>
       <button class="btn btn-back" id="clrBtn">清空法术</button>
@@ -117,7 +117,7 @@ function renderSlots(){
   });
 }
 function renderSpellLibrary(){
-  const el=document.getElementById('lib'); el.innerHTML='';
+  const el=document.getElementById('spellLibrary'); el.innerHTML='';
   Object.entries(SPELLS).forEach(([key,s])=>{
     const d=document.createElement('div');
     d.className=`spell tag-${s.t}`;
@@ -140,7 +140,8 @@ function refresh(){
   document.getElementById('combo').innerHTML=filled.length?`当前组合：<b>${filled.map(s=>SPELLS[s].n).join(' → ')}</b>`:'当前组合：<b>未选择法术</b>';
   document.getElementById('goBtn').disabled=!wand.some(s=>s&&SPELLS[s].t==='projectile');
 }
-document.getElementById('lib').onclick=e=>{
+// ✅ 修复：绑定到正确的 spellLibrary 元素
+document.getElementById('spellLibrary').onclick=e=>{
   const sp=e.target.closest('.spell'); if(!sp||sp.classList.contains('off'))return;
   const idx=wand.indexOf(null); if(idx<0)return;
   wand[idx]=sp.dataset.s; refresh();
@@ -287,4 +288,30 @@ function loop(){
   cx.clearRect(0,0,800,500);
   cx.fillStyle='rgba(255,255,255,.15)';
   for(let i=0;i<30;i++){cx.fillRect((i*137+cooldown*0.1)%800,(i*97)%500,1.5,1.5);}
-  if(cooldown
+  if(cooldown>0)cooldown--;
+
+  // 更新子弹
+  bullets=bullets.filter(b=>{
+    if(b.homing&&enemies.length){
+      let closest=enemies[0],minD=Infinity;
+      enemies.forEach(e=>{const d=Math.hypot(e.x-b.x,e.y-b.y);if(d<minD){minD=d;closest=e;}});
+      const a=Math.atan2(closest.y-b.y,closest.x-b.x);
+      b.vx+=(Math.cos(a)*7-b.vx)*0.08;
+      b.vy+=(Math.sin(a)*7-b.vy)*0.08;
+    }
+    b.x+=b.vx; b.y+=b.vy; b.life--;
+    
+    // 拳头穿透逻辑
+    if(b.type==='fist' && !b.returning){
+      let hitAny=false;
+      for(let i=enemies.length-1;i>=0;i--){
+        const e=enemies[i];
+        if(Math.hypot(e.x-b.x,e.y-b.y)<e.r+b.r){
+          hitEnemy(e,b.dmg,{freeze:b.freeze});
+          hitAny=true;
+          // 击退效果（仅导弹
+
+---
+代码在循环函数里被截断了，我帮你把剩下的部分补全，你直接复制完整代码替换就行。
+
+<websource>inline_action_reply_1</websource>
