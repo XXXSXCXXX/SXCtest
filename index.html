@@ -57,7 +57,7 @@ canvas{display:block;background:#0f0f23;border-radius:12px;border:2px solid rgba
     ③ 点击"开始闯关"，在战斗中<b>点击画面</b>释放魔法<br>
     ④ 消灭所有怪物即可过关！共5关，难度递增<br>
     ⑤ 怪物会发射✊🏻攻击你，注意躲避！<br>
-    ⑥ <b>A/D键</b>或<b>左下角摇杆</b>控制左右移动
+    ⑥ <b>W/A/S/D键</b>或<b>方向键</b>或<b>左下角摇杆</b>控制八向移动
   </div>
   <div class="crafting" id="craftUI">
     <div class="slots" id="slots"></div>
@@ -120,9 +120,9 @@ let wand = Array(SLOTS).fill(null);
 let level = 1, hp = 10, maxHp = 10;
 let enemies = [], bullets = [], particles = [], lasers = [], enemyFists = [];
 let running = false, animId = null, cooldown = 0;
-let playerX = 400, playerSpeed = 4;
-let keys = { left:false, right:false };
-let joyActive = false, joyDX = 0;
+let playerX = 400, playerY = 460, playerSpeed = 4;
+let keys = { left:false, right:false, up:false, down:false };
+let joyActive = false, joyDX = 0, joyDY = 0;
 const cv = document.getElementById('cv'), cx = cv.getContext('2d');
 
 // ===================== 构筑界面 =====================
@@ -303,7 +303,7 @@ function shoot(tx, ty) {
   if (!combo.base) return;
   var base = SPELLS[combo.base];
   cooldown = base.cd;
-  var px = playerX, py = 460;
+  var px = playerX, py = playerY;
   var ang = Math.atan2(ty - py, tx - px);
 
   // 激光特殊处理
@@ -364,7 +364,7 @@ function shoot(tx, ty) {
 function startLevel(lv) {
   level = lv;
   hp = maxHp;
-  playerX = 400;
+  playerX = 400; playerY = 460;
   bullets = []; particles = []; lasers = []; enemyFists = [];
   cooldown = 0;
   spawnEnemies(lv);
@@ -396,11 +396,27 @@ function getPlayerEmoji() {
 }
 
 function update() {
-  // 玩家移动
-  if (keys.left) playerX -= playerSpeed;
-  if (keys.right) playerX += playerSpeed;
-  if (joyActive) playerX += joyDX * playerSpeed;
+  // 玩家移动（八向，带速度归一化）
+  var dx = 0, dy = 0;
+  if (keys.left) dx -= 1;
+  if (keys.right) dx += 1;
+  if (keys.up) dy -= 1;
+  if (keys.down) dy += 1;
+  // 摇杆输入叠加
+  if (joyActive) {
+    dx += joyDX;
+    dy += joyDY;
+  }
+  // 速度归一化：对角线移动时保持速度一致
+  var len = Math.sqrt(dx * dx + dy * dy);
+  if (len > 0) {
+    dx /= len;
+    dy /= len;
+  }
+  playerX += dx * playerSpeed;
+  playerY += dy * playerSpeed;
   playerX = Math.max(20, Math.min(780, playerX));
+  playerY = Math.max(420, Math.min(480, playerY));
 
   // 冷却
   if (cooldown > 0) cooldown--;
@@ -456,7 +472,7 @@ function update() {
     if (e.frozen > 0) { e.frozen--; return; }
     e.changeTimer--;
     if (e.changeTimer <= 0) {
-      e.dir = Math.atan2(460 - e.y, playerX - e.x) + (Math.random() - 0.5) * 1.5;
+      e.dir = Math.atan2(playerY - e.y, playerX - e.x) + (Math.random() - 0.5) * 1.5;
       e.changeTimer = 60 + Math.random() * 120;
     }
     e.x += Math.cos(e.dir) * e.speed;
@@ -468,7 +484,7 @@ function update() {
     e.attackTimer--;
     if (e.attackTimer <= 0) {
       e.attackTimer = 150 + Math.random() * 200;
-      var ea = Math.atan2(460 - e.y, playerX - e.x);
+      var ea = Math.atan2(playerY - e.y, playerX - e.x);
       enemyFists.push({
         x: e.x, y: e.y,
         vx: Math.cos(ea) * 3,
@@ -483,9 +499,9 @@ function update() {
     var f = enemyFists[fi];
     f.x += f.vx; f.y += f.vy; f.life--;
     // 碰撞玩家
-    if (Math.abs(f.x - playerX) < f.r + 15 && Math.abs(f.y - 460) < f.r + 15) {
+    if (Math.abs(f.x - playerX) < f.r + 15 && Math.abs(f.y - playerY) < f.r + 15) {
       hp--;
-      addParticles(playerX, 460, '#ff0000', 8);
+      addParticles(playerX, playerY, '#ff0000', 8);
       enemyFists.splice(fi, 1);
       if (hp <= 0) { gameOver(); return; }
       continue;
@@ -596,12 +612,12 @@ function draw() {
   cx.font = '36px serif';
   cx.textAlign = 'center';
   cx.textBaseline = 'middle';
-  cx.fillText(getPlayerEmoji(), playerX, 460);
+  cx.fillText(getPlayerEmoji(), playerX, playerY);
 
   // 冷却指示
   if (cooldown > 0) {
     cx.fillStyle = 'rgba(233,69,96,0.5)';
-    cx.fillRect(playerX - 15, 480, 30 * (cooldown / 30), 3);
+    cx.fillRect(playerX - 15, playerY + 20, 30 * (cooldown / 30), 3);
   }
 }
 
@@ -657,10 +673,14 @@ cv.addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.left = true;
   if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.right = true;
+  if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.up = true;
+  if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.down = true;
 });
 document.addEventListener('keyup', function(e) {
   if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.left = false;
   if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.right = false;
+  if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.up = false;
+  if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.down = false;
 });
 
 // 摇杆控制
@@ -694,6 +714,7 @@ document.addEventListener('keyup', function(e) {
       if (e.changedTouches[i].identifier === joyTouchId) {
         joyActive = false;
         joyDX = 0;
+        joyDY = 0;
         knob.style.transform = 'translate(-50%,-50%)';
         joyTouchId = null;
         break;
@@ -703,11 +724,19 @@ document.addEventListener('keyup', function(e) {
 
   function updateJoy(touch) {
     var cx = baseRect.left + baseRect.width / 2;
+    var cy = baseRect.top + baseRect.height / 2;
     var dx = touch.clientX - cx;
+    var dy = touch.clientY - cy;
     var maxR = 35;
-    dx = Math.max(-maxR, Math.min(maxR, dx));
-    knob.style.transform = 'translate(calc(-50% + ' + dx + 'px), -50%)';
+    // 限制在圆形范围内
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > maxR) {
+      dx = dx / dist * maxR;
+      dy = dy / dist * maxR;
+    }
+    knob.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px))';
     joyDX = dx / maxR;
+    joyDY = dy / maxR;
   }
 })();
 
